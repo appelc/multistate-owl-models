@@ -1,0 +1,71 @@
+
+      model{
+        #priors (psi)
+          beta~dnorm(0,0.368)      #with no covariates on psi
+          beta2~dnorm(0,0.368)     #with no covariates on R
+        
+	gamma[1]~dnorm(0,0.368)    #with 5 covariates on p
+     	for(aa in 2:7){
+       	  gamma[aa]<-a[aa-1,pick[aa-1]]
+       		pick[aa-1]<-w[aa-1]+1
+       		w[aa-1]~dbern(0.5)
+       		a[aa-1,1]~dnorm(SpikeMuGamma[aa],tau.a[aa])
+       		tau.a[aa]<-pow(SpikeSDGamma[aa],-2)
+       		a[aa-1,2]~dnorm(0,0.368)
+     	}
+
+        iota~dnorm(0,0.368)        #with no covariates on delta
+  
+        #likelihood
+          for(ii in 1:nhex){       #loop through hexagons         
+        
+          #categorical 1 draw from a multinomial
+          Occ.hex[ii]~dcat(TPM[ii, ])  #occupancy state of hexagon: 3=empty, 2=occupied with reproduction, 1=occupied without reproduction
+  
+          TPM[ii,1]<-psi[ii]*(1-R[ii]) #occupied without paired birds
+          TPM[ii,2]<-psi[ii]*R[ii]     #occupied with paired birds    
+          TPM[ii,3]<-1-psi[ii]         #unoccupied 
+  
+          logit(psi[ii])<-beta #logistic regression of occupancy probability of hexagon  #no covariate on psi
+          logit(R[ii])<-beta2  #logistic regression of paired status probability, given occupancy of hexagon
+  
+          for(kk in 1:nVisits){ #loop through visits at recorders
+              y[ii,kk]~dcat(p[ii,kk,Occ.hex[ii], ]) #encounter data
+  
+              p[ii,kk,1,1]<-pA[ii,kk]     #detect occupancy
+              p[ii,kk,1,2]<-0             #can't detect reproduction if no reproduction occurs
+              p[ii,kk,1,3]<-1-pA[ii,kk]   #didn't detect occupancy
+    
+              p[ii,kk,2,1]<-pJ[ii,kk]*(1-delta[ii,kk])    #detect occupancy and failed to detect paired status
+              p[ii,kk,2,2]<-pJ[ii,kk]*delta[ii,kk]        #detect occupancy and paired status 
+              p[ii,kk,2,3]<-1-pJ[ii,kk]                   #failed to detect occupancy
+    
+              p[ii,kk,3,1]<-0
+              p[ii,kk,3,2]<-0
+              p[ii,kk,3,3]<-1 #can't detect occupancy or reproduction if they are not there
+            
+            #w indicator var:
+
+            #logistic regression of detection probability of species without paired birds:
+               logit(pA[ii,kk])<-gamma[1]                 + w[2]*gamma[3]*noise[ii,kk] + w[3]*gamma[4]*effort[ii,kk] + w[4]*gamma[5]*seasondate[ii,kk] + w[5]*gamma[6]*stva_weekly[ii,kk] + w[6]*gamma[7]*suit_stn[ii,kk]    #with 5 covariates
+              
+            #logistic regression of detection probability of species with paired birds:
+               logit(pJ[ii,kk])<-gamma[1] + w[1]*gamma[2] + w[2]*gamma[3]*noise[ii,kk] + w[3]*gamma[4]*effort[ii,kk] + w[4]*gamma[5]*seasondate[ii,kk] + w[5]*gamma[6]*stva_weekly[ii,kk] + w[6]*gamma[7]*suit_stn[ii,kk]    #with 5 covariates
+              
+            #logistic regression of probability of correctly detecting paired status:  
+               logit(delta[ii,kk])<-iota           
+            
+            } #kk
+        } #ii
+        
+        ##derived params
+        
+        logit(pOcc) <- gamma[1]              
+        logit(pPair) <- gamma[1] + gamma[2] 
+        
+        logit(condPair) <- iota
+        truePair <- pPair * condPair
+  
+      }#end of model
+      
+#input the spike/slab as data, stop providing inital values for gamma

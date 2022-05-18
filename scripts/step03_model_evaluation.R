@@ -8,7 +8,7 @@
 ## 2) Explore covariate effects on detection (calculate odds-ratios, etc.)
 ## 3) Calculate predicted/fitted values
 ## 4) Create marginal plots
-## 5)
+## 5) Calculate psi_cond and psi_hat
 
 library(dplyr)
 library(magrittr)
@@ -20,6 +20,7 @@ library(data.table)
 library(ggplot2)
 library(gridExtra)
 library(ggpubr)
+library(grid)
 
 
 ## -----------------------------------------------------------------------------
@@ -27,6 +28,8 @@ library(ggpubr)
  
 ## Import model
 final_model <- readRDS('results/04_model/model_output.rds')
+  #temporarily:
+  final_model <- readRDS('C:/Users/caral/Documents/_RESEARCH/Models/results2018_Jan2022/17_model_final_norm1priors/model_output.rds')
 
   ## FOR TABLES 3 AND 4
   ## Model summary with parameter estimates and derived parameters tracked in model:
@@ -69,7 +72,7 @@ nso_dh <- fread('data2018/nso_dh_2018.csv')
 ## Calculate means, SDs, and odds ratios:
   
   #intercepts
-  p_intMean  = mean(final_model$sims.list$gamma[,1])
+  p_intMean  = mean(final_model$sims.list$gamma[,1]) #mean/SD also tracked in model
   p_intSD    = sd(final_model$sims.list$gamma[,1])
   p_intQuant = quantile(final_model$sims.list$gamma[,1], probs = c(0.025, 0.975))
   
@@ -268,28 +271,46 @@ nso_dh <- fread('data2018/nso_dh_2018.csv')
     )   
   ee
   
-
 ## Combine and export
-  combinedFig <- ggarrange(nn, ee, labels = c("a", "b"), ncol = 2, nrow = 1, 
-                           common.legend = TRUE, legend = 'bottom', vjust = -1, hjust = -4.5, 
-                           font.label = list(size = 24)) +
-    theme(plot.margin = margin(2,0.1,0.1,0.1, "cm"))
+  Fig3 <- ggarrange(nn + rremove("ylab"), ee + rremove("ylab"), 
+                    labels = c("a", "b"), font.label = list(size = 24), 
+                    vjust = c(1.5,1.5), hjust = c(-4,-3.5), 
+                    ncol = 1, nrow = 2, 
+                    common.legend = TRUE, legend = 'right') +
+    theme(plot.margin = margin(0.1,1,0.1,1, "cm"))
   
-  ## FIGURE 3
-  # ggexport(combinedFig, width = 850, height = 450,
-  #          filename = 'figures/marginals_noise_effort_model04.png')
+  Fig3_shared_axis <- annotate_figure(Fig3, 
+                                      left = textGrob('Weekly detection probability (p) \u00B1 95% CI', 
+                                                      rot = 90, vjust = 2, hjust = 0.5,
+                                                      gp = gpar(fontsize = 18)))
 
-  combinedFig2 <- ggarrange(nn + rremove("ylab"), ee + rremove("ylab"), labels = c("a", "b"), ncol = 1, nrow = 2, 
-                           common.legend = TRUE, legend = 'bottom',  vjust = -1, hjust = -4.5, 
-                           font.label = list(size = 24)) +
-    theme(plot.margin = margin(2,0.1,0.1,0.1, "cm"))
-  combinedFig2_shared_axis <- annotate_figure(combinedFig2, left = textGrob('Weekly detection probability (p) \u00B1 95% CI', rot = 90, vjust = 1, gp = gpar(cex = 1.3)))
-  
-  tiff(filename = 'figures/test.tif', height = 5600, width = 5200, units = 'px', 
+  ## FOR FIGURE 3
+  tiff(filename = 'figures/fig3.tif', height = 5600, width = 5200, units = 'px',
        res = '800', compression = 'lzw')
-  print(combinedFig2_shared_axis)
+  print(Fig3_shared_axis)
   dev.off()  
   
-  ## give it more room on the left 
+  
+## -----------------------------------------------------------------------------
+## 5) Calculate psi_cond and psi_hat
+  
+## psi_cond: probability that a unit is occupied given owls NOT detected there
+## (after MacKenzie et al. 2018 page 138)
+  psiD = mean(final_model$sims.list$psiD)
+  pOcc = mean(final_model$sims.list$pOcc) #use p1 for simplicity
+  k = 40  #survey occasions
+  
+  ## TO REPORT IN-TEXT  
+  (psiCond = (psi_mean * (1 - pOcc)^k) / (1 - psi_mean * (1 - (1 - pOcc)^k))) 
+
+  
+## psi_hat: proportion of sites occupied
+## (after MacKenzie et al. 2018 section 6.1)
+  s  = 207  #number of sites surveyed 
+  sd = 34   #number of sites with detections
+  
+  ## TO REPORT IN-TEXT
+  (psiHat = (sd + (s - sd)*psiCond) / s) 
+  
 
   

@@ -72,7 +72,7 @@ nso_dh <- fread('data2018/nso_dh_2018.csv')
 ## Calculate means, SDs, and odds ratios:
   
   #intercepts
-  p_intMean  = mean(final_model$sims.list$gamma[,1]) #mean/SD also tracked in model
+  p_intMean  = mean(final_model$sims.list$gamma[,1])
   p_intSD    = sd(final_model$sims.list$gamma[,1])
   p_intQuant = quantile(final_model$sims.list$gamma[,1], probs = c(0.025, 0.975))
   
@@ -110,7 +110,7 @@ nso_dh <- fread('data2018/nso_dh_2018.csv')
                          'OR_LCI' = c(NA, NA, p_noiseOR_LCI, p_effortOR_LCI),
                          'OR_UCI' = c(NA, NA, p_noiseOR_UCI, p_effortOR_UCI))
 
-  ## FOR TABLE 4  
+  ## FOR TABLE 3   
   p_params %>%
     kbl(digits = 3) %>%
     kable_styling(bootstrap_options = 'striped', font_size = 14, full_width = FALSE, position = 'left')
@@ -159,14 +159,13 @@ nso_dh <- fread('data2018/nso_dh_2018.csv')
   noiseBT <- (noiseScaled * zsd_noise) + zmean_noise
   
   #set up dataframe
-  noisePlot <- data.frame(x = rep(noiseBT, 4),
+  noisePlot <- data.frame(x = rep(noiseBT, 2),
                           y = c(apply(f1bt, 2, mean), apply(f2bt, 2, mean)), 
                           lo = c(apply(f1bt, 2, quantile, probs = 0.025), 
                                  apply(f2bt, 2, quantile, probs = 0.025)),
                           hi = c(apply(f1bt, 2, quantile, probs = 0.975), 
                                  apply(f2bt, 2, quantile, probs = 0.975)),
-                          grp = c(rep('Non-pairs', length(noiseBT)), rep('Pairs', length(noiseBT))),
-                          season = c(rep('Early', length(noiseBT)), rep('Late', length(noiseBT))))
+                          grp = c(rep('Non-pairs', length(noiseBT)), rep('Pairs', length(noiseBT))))
   
   
 ## EFFORT ####  
@@ -209,14 +208,13 @@ nso_dh <- fread('data2018/nso_dh_2018.csv')
   effortBT <- (effortScaled * zsd_effort) + zmean_effort
   
   #set up dataframe
-  effortPlot <- data.frame(x = rep(effortBT, 4),
+  effortPlot <- data.frame(x = rep(effortBT, 2),
                            y = c(apply(g1bt, 2, mean), apply(g2bt, 2, mean)),
                            lo = c(apply(g1bt, 2, quantile, probs = 0.025), 
                                   apply(g2bt, 2, quantile, probs = 0.025)),
                            hi = c(apply(g1bt, 2, quantile, probs = 0.975), 
                                   apply(g2bt, 2, quantile, probs = 0.975)),
-                           grp = c(rep('Non-pairs', length(effortBT)), rep('Pairs', length(effortBT))),
-                           season = c(rep('Early', length(noiseBT)), rep('Late', length(noiseBT))))
+                           grp = c(rep('Non-pairs', length(effortBT)), rep('Pairs', length(effortBT))))
   
   
 ## -----------------------------------------------------------------------------
@@ -232,7 +230,7 @@ nso_dh <- fread('data2018/nso_dh_2018.csv')
     geom_rug(data = noiseRaw, mapping = aes(x = noise), inherit.aes = FALSE) +
     scale_fill_manual(values = c('Non-pairs' = 'black', 'Pairs' = 'darkblue')) +
     scale_colour_manual(values = c('Non-pairs' = 'black', 'Pairs' = 'darkblue')) +
-    #scale_linetype_manual(values = c('Non-pairs' = 'solid', 'Pairs' = 'twodash')) +
+    # scale_linetype_manual(values = c('Non-pairs' = 'solid', 'Pairs' = 'twodash')) +
     theme(panel.background = element_rect(fill = 'transparent'),
           axis.line = element_line(),
           axis.title = element_text(size = 18),
@@ -301,7 +299,7 @@ nso_dh <- fread('data2018/nso_dh_2018.csv')
   k = 40  #survey occasions
   
   ## TO REPORT IN-TEXT  
-  (psiCond = (psi_mean * (1 - pOcc)^k) / (1 - psi_mean * (1 - (1 - pOcc)^k))) 
+  (psiCond = (psiD * (1 - pOcc)^k) / (1 - psiD * (1 - (1 - pOcc)^k))) 
 
   
 ## psi_hat: proportion of sites occupied

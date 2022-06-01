@@ -21,8 +21,10 @@ library(MCMCvis)
 library(kableExtra)
 library(data.table)
 library(ggplot2)
+library(grid)
 library(gridExtra)
 library(string)
+library(ggpubr)
 
 ## -----------------------------------------------------------------------------
 ## 1) View estimated and derived parameters to report ####
@@ -618,20 +620,26 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
           legend.title = element_blank(),
           #legend.position = 'none',
           legend.background = element_rect(fill='transparent')
-    )   
+    )
   aa
-  #or 800 x 600
+
+## Format margins to match other figures
+  Fig5 <- ggarrange(aa + rremove("ylab"), vjust = c(1.5,1.5), hjust = c(-4,-3.5), 
+                    ncol = 1, nrow = 1, 
+                    common.legend = TRUE, legend = 'right') +
+    theme(plot.margin = margin(0.1,1,0.1,1, "cm"))
   
-  data.frame(lapply(areaPlotPH, function(y) if(is.numeric(y)) round(y, 3) else y))
+  Fig5_shared_axis <- annotate_figure(Fig5,
+                                      left = textGrob('Probability \u00B1 95 CI',
+                                                      rot = 90, vjust = 1,
+                                                      gp = gpar(cex = 1.6)))
   
   
   ## FOR FIGURE 5
-  tiff(filename = 'figures/fig5.tif', height = 5200, width = 5200, units = 'px',
+  tiff(filename = 'figures/fig5.tif', height = 4000, width = 5200, units = 'px',
        res = '800', compression = 'lzw')
-  print(aa)
+  print(Fig5_shared_axis)
   dev.off()  
-  
-  
   
   
 ## BARRED OWL TOTAL

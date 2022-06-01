@@ -16,14 +16,16 @@ library(MCMCvis)
 library(kableExtra)
 library(data.table)
 library(ggplot2)
+library(grid)
 library(gridExtra)
+library(ggpubr)
 
 ## -----------------------------------------------------------------------------
 ## 1) View estimated and derived parameters to report ####
 
 ## Import model
 noArea_model <- readRDS('results/06_model_posthoc_norm1priors_marginals/model_output.rds')
-#noArea_model <- readRDS('C:/users/caral/Documents/_RESEARCH/Models/results2018_Jan2022/18_model_reduced_norm1priors_marginals/model_output.rds')
+# noArea_model <- readRDS('C:/users/caral/Documents/_RESEARCH/Models/results2018_Jan2022/18_model_reduced_norm1priors_marginals/model_output.rds')
 
   noArea_model$summary %>%
     kbl(digits = 3) %>%
@@ -182,7 +184,7 @@ noArea_model <- readRDS('results/06_model_posthoc_norm1priors_marginals/model_ou
                                     apply(pairBTnr, 2, quantile, probs = 0.025)),
                              hi = c(apply(occBTnr, 2, quantile, probs = 0.975), 
                                     apply(pairBTnr, 2, quantile, probs = 0.975)),
-                             grp = c(rep('Any owl', length(nrBT)), rep('Pair', length(nrBT))))
+                             grp = c(rep('Use', length(nrBT)), rep('Pair\noccupancy', length(nrBT))))
 
 
 
@@ -238,15 +240,8 @@ noArea_model <- readRDS('results/06_model_posthoc_norm1priors_marginals/model_ou
                                          apply(pairBTbo, 2, quantile, probs = 0.025)),
                                   hi = c(apply(occBTbo, 2, quantile, probs = 0.975), 
                                          apply(pairBTbo, 2, quantile, probs = 0.975)),
-                                  grp = c(rep('Any owl', length(boTotalBT)), rep('Pair', length(boTotalBT))))
+                                  grp = c(rep('Use', length(boTotalBT)), rep('Pair\noccupancy', length(boTotalBT))))
   
-  bo2 <- data.frame(x = rep(boTotalBT),
-                    y = c(apply(occNoPairBTbo, 2, mean), apply(pairBTbo, 2, mean)),
-                    lo = c(apply(occNoPairBTbo, 2, quantile, probs = 0.025), 
-                           apply(pairBTbo, 2, quantile, probs = 0.025)),
-                    hi = c(apply(occNoPairBTbo, 2, quantile, probs = 0.975), 
-                           apply(pairBTbo, 2, quantile, probs = 0.975)),
-                    grp = c(rep('Non-pair', length(boTotalBT)), rep('Pair', length(boTotalBT))))
   
 
 ## -----------------------------------------------------------------------------
@@ -256,12 +251,12 @@ noArea_model <- readRDS('results/06_model_posthoc_norm1priors_marginals/model_ou
   rr <- ggplot(NRplotNoArea, aes(x/10000, y)) + 
     geom_ribbon(aes(ymin = lo, ymax = hi, fill = grp), alpha = 0.3) +
     geom_line(size = 1.5, aes(color = grp, linetype = grp)) +
-    ylab('Probability of occupancy \u00B1 95 CI') + xlab('Mean NR forest suitability index (500m)') +
+    ylab('Probability of occupancy \u00B1 95 CI') + xlab('Mean NR suitability index (500m)') +
     ylim(c(0,1)) +
-    scale_fill_manual(values = c('Any owl' = 'black', 'Pair' = 'darkblue')) + 
-    scale_colour_manual(values = c('Any owl' = 'black', 'Pair' = 'darkblue')) +
-    scale_linetype_manual(values = c('Any owl' = 'solid', 'Pair' = 'twodash')) +
-    geom_rug(data = nr500Raw, mapping = aes(x = MEAN/10000), inherit.aes = FALSE) +   #if index mean
+    scale_fill_manual(values = c('Use' = 'black', 'Pair\noccupancy' = 'darkblue')) + 
+    scale_colour_manual(values = c('Use' = 'black', 'Pair\noccupancy' = 'darkblue')) +
+    scale_linetype_manual(values = c('Use' = 'solid', 'Pair\noccupancy' = 'twodash')) +
+    geom_rug(data = nr500Raw, mapping = aes(x = MEAN/10000), inherit.aes = FALSE) + 
     theme(panel.background = element_rect(fill = 'transparent'),
           axis.line = element_line(),
           axis.title = element_text(size = 16),
@@ -277,15 +272,15 @@ noArea_model <- readRDS('results/06_model_posthoc_norm1priors_marginals/model_ou
  
 
 ## BARRED OWL TOTAL
-bb <- ggplot(boTotalPlotPosthoc, aes(x, y, linetype = grp)) +
+bb <- ggplot(boTotalPlotNoArea, aes(x, y)) +
   geom_ribbon(aes(ymin = lo, ymax = hi, fill = grp), alpha = 0.3) +
-  geom_line(size = 1.5, aes(color = grp)) +
-  facet_grid(~study_area) +
+  geom_line(size = 1.5, aes(color = grp, linetype = grp)) +
   ylab('Probability of occupancy \u00B1 95 CI') + xlab('Barred owl detections (total)') +
   #scale_x_continuous(breaks = seq(0, 8000, 2000), limits = c(0, 5000)) +
   ylim(c(0,1)) +
-  scale_fill_manual(values = c('Any NSO' = 'black', 'Pair' = 'darkblue')) + 
-  scale_colour_manual(values = c('Any NSO' = 'black', 'Pair' = 'darkblue')) +
+  scale_fill_manual(values = c('Use' = 'black', 'Pair\noccupancy' = 'darkblue')) + 
+  scale_colour_manual(values = c('Use' = 'black', 'Pair\noccupancy' = 'darkblue')) +
+  scale_linetype_manual(values = c('Use' = 'solid', 'Pair\noccupancy' = 'twodash')) +
   geom_rug(data = boTotalRaw, mapping = aes(x = total), inherit.aes = FALSE) +
   theme(panel.background = element_rect(fill = 'transparent'),
         axis.line = element_line(),
@@ -300,24 +295,24 @@ bb <- ggplot(boTotalPlotPosthoc, aes(x, y, linetype = grp)) +
   )   
 bb
 
-## REPORT FIGURES FROM MODEL WITHOUT AREA INSTEAD
+## Combine and export
+  Fig4 <- ggarrange(rr + rremove("ylab"), bb + rremove("ylab"), 
+                    labels = c("a", "b"), font.label = list(size = 24), 
+                    vjust = c(1.5,1.5), hjust = c(-4,-3.5), 
+                    ncol = 1, nrow = 2, 
+                    common.legend = TRUE, legend = 'right') +
+    theme(plot.margin = margin(0.1,1,0.1,1, "cm"))
 
-# combinedMarginals <- ggarrange(rr +  rremove("y.title"), 
-#                                bb + rremove("y.title"), 
-#                                labels = c("a", "b"), ncol = 1, nrow = 2, 
-#                                common.legend = TRUE, legend = 'bottom', 
-#                                vjust = 0, hjust = -2.5, font.label = list(size = 24)) +
-#   theme(plot.margin = margin(2,0.1,0.1,1, "cm"))
-# 
-# combinedMarginals
-# 
-# combinedMarginalsAnnotated <- annotate_figure(combinedMarginals, 
-#                                               left = textGrob('Probability of occupancy \u00B1 95 CI', 
-#                                                               rot = 90, vjust = 1,
-#                                                               gp = gpar(cex = 1.6)))
-# 
-# ggexport(combinedMarginalsAnnotated, width = 700, height = 800,
-#          filename = 'figures/marginals_NR_BO_noArea_model.png')
+  Fig4_shared_axis <- annotate_figure(Fig4,
+                                      left = textGrob('Probability \u00B1 95 CI',
+                                                      rot = 90, vjust = 1,
+                                                      gp = gpar(cex = 1.6)))
+
+  ## FOR FIGURE 3
+  tiff(filename = 'figures/fig4.tif', height = 5600, width = 5200, units = 'px',
+       res = '800', compression = 'lzw')
+  print(Fig4_shared_axis)
+  dev.off()  
 
 
 ## -----------------------------------------------------------------------------

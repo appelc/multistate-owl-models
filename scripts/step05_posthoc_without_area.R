@@ -5,8 +5,11 @@
 
 ## CONTENTS:
 
-## 7) Calculate predicted/fitted values (occupancy)
-## 8) Create marginal plots (occupancy)
+## 1) View estimated and derived parameters
+## 2) Explore covariate effects on occupancy (psi)
+## 3) Explore covariate effects on conditional pair occupancy (R)
+## 4) Calculate predicted/fitted values (occupancy)
+## 5) Create marginal plots (occupancy) 
 
 library(dplyr)
 library(magrittr)
@@ -33,7 +36,7 @@ noArea_model <- readRDS('results/06_model_posthoc_norm1priors_marginals/model_ou
 
 
 ## -----------------------------------------------------------------------------  
-## 5) Explore covariate effects on occupancy (psi) ####
+## 2) Explore covariate effects on occupancy (psi) ####
 
 ## Plot posterior means and CI (50% = thick lines) (95% = thin lines):
   MCMCplot(noArea_model, params = 'beta', main = '"psi" parameters', ref_ovl = TRUE)
@@ -82,7 +85,7 @@ noArea_model <- readRDS('results/06_model_posthoc_norm1priors_marginals/model_ou
 
 
 ## -----------------------------------------------------------------------------  
-## 6) Explore covariate effects on conditional pair occupancy (R) ####
+## 3) Explore covariate effects on conditional pair occupancy (R) ####
 
   ## Plot posterior means and CI (50% = thick lines) (95% = thin lines):
   MCMCplot(noArea_model, params = 'beta2', main = '"R" parameters', ref_ovl = TRUE)
@@ -129,7 +132,7 @@ noArea_model <- readRDS('results/06_model_posthoc_norm1priors_marginals/model_ou
 
 
 ## -----------------------------------------------------------------------------
-## 7) Calculate predicted/fitted values (occupancy) ####
+## 4) Calculate predicted/fitted values (occupancy) ####
 
 ## FOREST SUITABILITY MEAN ####
   
@@ -245,7 +248,7 @@ noArea_model <- readRDS('results/06_model_posthoc_norm1priors_marginals/model_ou
   
 
 ## -----------------------------------------------------------------------------
-## 8. Create marginal plots (occupancy) ####
+## 5) Create marginal plots (occupancy) ####
 
 ## NR 500
   rr <- ggplot(NRplotNoArea, aes(x/10000, y)) + 

@@ -1,14 +1,12 @@
 ## multistate occupancy models with 2018 owl data
 
-## evaluate most-supported model from submodel selection:
+## evaluate most-supported model from submodel selection for prediction:
 ## p(NOISE + EFFORT) δ(.) ψ(.) R(.)
 
 ## CONTENTS:
 ## 1) Calculate derived parameters and compare with naive estimates
 ## 2) Explore covariate effects on detection (calculate odds-ratios, etc.)
-## 3) Calculate predicted/fitted values
-## 4) Create marginal plots
-## 5) Calculate psi_cond and psi_hat
+## 3) Calculate psi_cond and psi_hat
 
 library(dplyr)
 library(magrittr)
@@ -116,181 +114,9 @@ nso_dh <- fread('data2018/nso_dh_2018.csv')
     kable_styling(bootstrap_options = 'striped', font_size = 14, full_width = FALSE, position = 'left')
   
   
-## -----------------------------------------------------------------------------
-## 3) Calculate predicted/fitted values ####
-  
-## NOISE ####
-  
-  #import raw covariate values and calculate mean and SD
-  noiseRaw <- fread('data2018/covariates/raw/noise_raw_2018.csv', header = TRUE)
-  noiseRaw <- data.frame('noise' = unlist(noiseRaw[,-1]))
-    (zmean_noise <- mean(noiseRaw$noise, na.rm = TRUE))
-    (zsd_noise   <- sd(noiseRaw$noise, na.rm = TRUE))
-  
-  #import the scaled covariate and convert to vector
-  noiseStd <- fread('data2018/covariates/noise_2018.csv')
-  noiseStd <- noiseStd[,-c(1,2)]
-    noiseStd <- unlist(noiseStd, use.names = F)
-    noiseStd <- noiseStd[order(noiseStd)]
-  
-  #create a vector of values within the range of the real (scaled) values  
-  noiseScaled <- seq(min(noiseStd), max(noiseStd), length.out = 100)  
-  
-  #extract relevant columns from the simulations list (intercept/s and slope for this covariate)
-  simsNoise <- final_model$sims.list$gamma[,c(1:3)]
-  
-  #set up matrices
-  f1 <- matrix(nrow = nrow(simsNoise), ncol = length(noiseScaled))
-  f2 <- matrix(nrow = nrow(simsNoise), ncol = length(noiseScaled))
-  
-  #multiply intercept by 1; slope by value of the covariate
-  for(i in 1:nrow(simsNoise)){
-    for(j in 1:length(noiseScaled)){
-      f1[i, j] <- sum(simsNoise[i, ] * c(1, 0, noiseScaled[j])) #non-pair
-      f2[i, j] <- sum(simsNoise[i, ] * c(1, 1, noiseScaled[j])) #pair
-    }
-  }
-  
-  #back-transform from logit
-  f1bt <- plogis(f1)
-  f2bt <- plogis(f2)
-  
-  #convert the scaled covariate values to their real scale
-  noiseBT <- (noiseScaled * zsd_noise) + zmean_noise
-  
-  #set up dataframe
-  noisePlot <- data.frame(x = rep(noiseBT, 2),
-                          y = c(apply(f1bt, 2, mean), apply(f2bt, 2, mean)), 
-                          lo = c(apply(f1bt, 2, quantile, probs = 0.025), 
-                                 apply(f2bt, 2, quantile, probs = 0.025)),
-                          hi = c(apply(f1bt, 2, quantile, probs = 0.975), 
-                                 apply(f2bt, 2, quantile, probs = 0.975)),
-                          grp = c(rep('Non-pairs', length(noiseBT)), rep('Pairs', length(noiseBT))))
-  
-  
-## EFFORT ####  
-
-  #import raw covariate values and calculate mean and SD
-  effortRaw <- fread('data2018/covariates/raw/effort_raw_2018.csv', header = TRUE)
-  effortRaw <- data.frame('effort' = unlist(effortRaw[,-1]))
-    (zmean_effort <- mean(effortRaw$effort, na.rm = TRUE))
-    (zsd_effort   <- sd(effortRaw$effort, na.rm = TRUE))
-    
-  #import the scaled covariate and convert to vector
-  effortStd <- fread('data2018/covariates/effort_2018.csv')
-  effortStd <- effortStd[,-c(1:2)]
-    effortStd <- unlist(effortStd, use.names = FALSE)
-    effortStd <- effortStd[order(effortStd)]
-  
-  #create a vector of values within the range of the real (scaled) values  
-  effortScaled <- seq(min(effortStd), max(effortStd), length.out = 100)
-  
-  #extract relevant columns from the posterior draws (intercept/s and slope for this covariate)
-  simsEffort <- final_model$sims.list$gamma[,c(1:2,4)]
-  
-  #set up matrices
-  g1 <- matrix(nrow = nrow(simsEffort), ncol = length(effortScaled))
-  g2 <- matrix(nrow = nrow(simsEffort), ncol = length(effortScaled))
-  
-  #multiply intercept by 1; slope by value of the covariate
-  for(i in 1:nrow(simsEffort)){
-    for(j in 1:length(effortScaled)){
-      g1[i, j] <- sum(simsEffort[i, ] * c(1, 0, effortScaled[j])) #non-pair
-      g2[i, j] <- sum(simsEffort[i, ] * c(1, 1, effortScaled[j])) #pair
-    }
-  }
-  
-  #back-transform from logit
-  g1bt <- plogis(g1)
-  g2bt <- plogis(g2)
-  
-  #convert the scaled covariate values to their real scale
-  effortBT <- (effortScaled * zsd_effort) + zmean_effort
-  
-  #set up dataframe
-  effortPlot <- data.frame(x = rep(effortBT, 2),
-                           y = c(apply(g1bt, 2, mean), apply(g2bt, 2, mean)),
-                           lo = c(apply(g1bt, 2, quantile, probs = 0.025), 
-                                  apply(g2bt, 2, quantile, probs = 0.025)),
-                           hi = c(apply(g1bt, 2, quantile, probs = 0.975), 
-                                  apply(g2bt, 2, quantile, probs = 0.975)),
-                           grp = c(rep('Non-pairs', length(effortBT)), rep('Pairs', length(effortBT))))
-  
   
 ## -----------------------------------------------------------------------------
-## 4) Create marginal plots ####
-  
-## NOISE
-  nn <- ggplot(noisePlot, aes(x, y)) +
-    geom_ribbon(aes(ymin = lo, ymax = hi, fill = grp), alpha = 0.3) +
-    geom_line(size = 1.5, aes(color = grp, linetype = grp)) +
-    ylab('Weekly detection probability (p) \u00B1 95% CI') + xlab('Noise (dBFS)') +
-    #scale_x_continuous(breaks = seq(0, 8000, 2000), limits = c(0, 5000)) +
-    ylim(c(0,1)) +
-    geom_rug(data = noiseRaw, mapping = aes(x = noise), inherit.aes = FALSE) +
-    scale_fill_manual(values = c('Non-pairs' = 'black', 'Pairs' = 'darkblue')) +
-    scale_colour_manual(values = c('Non-pairs' = 'black', 'Pairs' = 'darkblue')) +
-    # scale_linetype_manual(values = c('Non-pairs' = 'solid', 'Pairs' = 'twodash')) +
-    theme(panel.background = element_rect(fill = 'transparent'),
-          axis.line = element_line(),
-          axis.title = element_text(size = 18),
-          strip.text = element_text(size = 16),
-          axis.text = element_text(size = 16),
-          plot.title = element_text(hjust = 0.5),
-          legend.text = element_text(size = 16),
-          legend.title = element_blank(),
-          #legend.position = 'none',
-          legend.background = element_rect(fill='transparent')
-    ) 
-  nn
-  
-## EFFORT
-  ee <- ggplot(effortPlot, aes(x, y)) +
-    geom_ribbon(aes(ymin = lo, ymax = hi, fill = grp), alpha = 0.3) +
-    geom_line(size = 1.5, aes(color = grp, linetype = grp)) +
-    ylab('Weekly detection probability (p) \u00B1 95% CI') + 
-    xlab('Effort (recording minutes)') +
-    #scale_x_continuous(breaks = seq(0, 8000, 2000), limits = c(0, 5000)) +
-    ylim(c(0,1)) +
-    geom_rug(data = effortRaw, mapping = aes(x = effort), inherit.aes = FALSE) +
-    scale_fill_manual(values = c('Non-pairs' = 'black', 'Pairs' = 'darkblue')) + 
-    scale_colour_manual(values = c('Non-pairs' = 'black', 'Pairs' = 'darkblue')) +
-    #scale_linetype_manual(values = c('Non-pairs' = 'solid', 'Pairs' = 'twodash')) +
-    theme(panel.background = element_rect(fill = 'transparent'),
-          axis.line = element_line(),
-          axis.title = element_text(size = 18),
-          strip.text = element_text(size = 16),
-          axis.text = element_text(size = 16),
-          plot.title = element_text(hjust = 0.5),
-          legend.text = element_text(size = 16),
-          legend.title = element_blank(),
-          #legend.position = 'none',
-          legend.background = element_rect(fill='transparent')
-    )   
-  ee
-  
-## Combine and export
-  Fig3 <- ggarrange(nn + rremove("ylab"), ee + rremove("ylab"), 
-                    labels = c("a", "b"), font.label = list(size = 24), 
-                    vjust = c(1.5,1.5), hjust = c(-4,-3.5), 
-                    ncol = 1, nrow = 2, 
-                    common.legend = TRUE, legend = 'right') +
-    theme(plot.margin = margin(0.1,1,0.1,1, "cm"))
-  
-  Fig3_shared_axis <- annotate_figure(Fig3, 
-                                      left = textGrob('Weekly detection probability (p) \u00B1 95% CI', 
-                                                      rot = 90, vjust = 2, hjust = 0.5,
-                                                      gp = gpar(fontsize = 18)))
-
-  ## FOR FIGURE 3
-  tiff(filename = 'figures/fig3.tif', height = 5600, width = 5200, units = 'px',
-       res = '800', compression = 'lzw')
-  print(Fig3_shared_axis)
-  dev.off()  
-  
-  
-## -----------------------------------------------------------------------------
-## 5) Calculate psi_cond and psi_hat
+## 3) Calculate psi_cond and psi_hat
   
 ## psi_cond: probability that a unit is occupied given owls NOT detected there
 ## (after MacKenzie et al. 2018 page 138)

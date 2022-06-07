@@ -1,6 +1,6 @@
 ## multistate occupancy models with 2018 owl data
 
-## evaluate post-hoc model:
+## evaluate full model for inference on covariate effects:
 ## p(NOISE + EFFORT) δ(.) ψ(NR500 + STUDY_AREA + BO_TOTAL) R(NR500 + STUDY_AREA + BO_TOTAL)
 
 ## CONTENTS:
@@ -23,18 +23,18 @@ library(data.table)
 library(ggplot2)
 library(grid)
 library(gridExtra)
-library(string)
+library(stringr)
 library(ggpubr)
 
 ## -----------------------------------------------------------------------------
 ## 1) View estimated and derived parameters to report ####
 
 ## Import model
-posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds')
-# posthoc_model <- readRDS('C:/users/caral/Documents/_RESEARCH/Models/results2018_Jan2022/06_model_reduced_norm1priors/model_output.rds')
+inference_model <- readRDS('results/05a_model_inference_norm1priors/model_output.rds')
+# inference_model <- readRDS('C:/users/caral/Documents/_RESEARCH/Models/results2018_Jan2022/06_model_reduced_norm1priors/model_output.rds')
 
   ## FOR SI TABLES:
-  posthoc_model$summary %>%
+  inference_model$summary %>%
     kbl(digits = 3) %>%
     kable_styling(bootstrap_options = 'striped', font_size = 14, full_width = FALSE, position = 'left')
 
@@ -43,52 +43,52 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
 ## 2) Explore covariate effects on detection  ####
   
 ## Plot posterior means and CI (50% = thick lines) (95% = thin lines):
-  MCMCplot(posthoc_model, params = 'gamma', main = '"p" parameters', ref_ovl = TRUE)
+  MCMCplot(inference_model, params = 'gamma', main = '"p" parameters', ref_ovl = TRUE)
   #[1]: intercept, [2]: intercept adjustment for pairs, [3]: noise, [4]: effort
   
 ## Calculate means, SDs, and odds ratios:
   
   #intercepts
-  p_intMean_ph  = mean(posthoc_model$sims.list$gamma[,1])
-  p_intSD_ph    = sd(posthoc_model$sims.list$gamma[,1])
-  p_intQuant_ph = quantile(posthoc_model$sims.list$gamma[,1], probs = c(0.025, 0.975))
+  p_intMean_inf  = mean(inference_model$sims.list$gamma[,1])
+  p_intSD_inf    = sd(inference_model$sims.list$gamma[,1])
+  p_intQuant_inf = quantile(inference_model$sims.list$gamma[,1], probs = c(0.025, 0.975))
   
-  p_intPairMean_ph  = mean(posthoc_model$sims.list$gamma[,2])
-  p_intPairSD_ph    = sd(posthoc_model$sims.list$gamma[,2])
-  p_intPairQuant_ph = quantile(posthoc_model$sims.list$gamma[,2], probs = c(0.025, 0.975))
+  p_intPairMean_inf  = mean(inference_model$sims.list$gamma[,2])
+  p_intPairSD_inf    = sd(inference_model$sims.list$gamma[,2])
+  p_intPairQuant_inf = quantile(inference_model$sims.list$gamma[,2], probs = c(0.025, 0.975))
   
   #noise
-  p_noiseSlope_ph = mean(posthoc_model$sims.list$gamma[,3])
-  p_noiseSD_ph    = sd(posthoc_model$sims.list$gamma[,3])
-  p_noiseQuant_ph = quantile(posthoc_model$sims.list$gamma[,3], probs = c(0.025, 0.975))
-  p_noiseOR_ph    = median(exp(posthoc_model$sims.list$gamma[,3]))      #odds ratio - use median
-  p_noiseOR_LCI_ph = quantile(exp(posthoc_model$sims.list$gamma[,3]), probs = c(0.025)) #odds ratio LCI
-  p_noiseOR_UCI_ph = quantile(exp(posthoc_model$sims.list$gamma[,3]), probs = c(0.975)) #odds ratio UCI
+  p_noiseSlope_inf = mean(inference_model$sims.list$gamma[,3])
+  p_noiseSD_inf    = sd(inference_model$sims.list$gamma[,3])
+  p_noiseQuant_inf = quantile(inference_model$sims.list$gamma[,3], probs = c(0.025, 0.975))
+  p_noiseOR_inf    = median(exp(inference_model$sims.list$gamma[,3]))      #odds ratio - use median
+  p_noiseOR_LCI_inf = quantile(exp(inference_model$sims.list$gamma[,3]), probs = c(0.025)) #odds ratio LCI
+  p_noiseOR_UCI_inf = quantile(exp(inference_model$sims.list$gamma[,3]), probs = c(0.975)) #odds ratio UCI
   
   #effort
-  p_effortSlope_ph = mean(posthoc_model$sims.list$gamma[,4])
-  p_effortSD_ph    = sd(posthoc_model$sims.list$gamma[,4])
-  p_effortQuant_ph = quantile(posthoc_model$sims.list$gamma[,4], probs = c(0.025, 0.975))
-  p_effortOR_ph    = median(exp(posthoc_model$sims.list$gamma[,4]))    #odds ratio - use median
-  p_effortOR_LCI_ph = quantile(exp(posthoc_model$sims.list$gamma[,4]), probs = c(0.025))   #odds ratio LCI 
-  p_effortOR_UCI_ph = quantile(exp(posthoc_model$sims.list$gamma[,4]), probs = c(0.975))   #odds ratio UCI
+  p_effortSlope_inf = mean(inference_model$sims.list$gamma[,4])
+  p_effortSD_inf    = sd(inference_model$sims.list$gamma[,4])
+  p_effortQuant_inf = quantile(inference_model$sims.list$gamma[,4], probs = c(0.025, 0.975))
+  p_effortOR_inf    = median(exp(inference_model$sims.list$gamma[,4]))    #odds ratio - use median
+  p_effortOR_LCI_inf = quantile(exp(inference_model$sims.list$gamma[,4]), probs = c(0.025))   #odds ratio LCI 
+  p_effortOR_UCI_inf = quantile(exp(inference_model$sims.list$gamma[,4]), probs = c(0.975))   #odds ratio UCI
   
-  p_params_posthoc <- data.frame('parameter' = rep('p', 4),
+  p_params_inference <- data.frame('parameter' = rep('p', 4),
                                 'covariate' = c('Intercept','Intercept for pairs',
                                                 'Background noise', 'Recording effort'),
-                                'mean' = c(p_intMean_ph, p_intPairMean_ph, p_noiseSlope_ph, p_effortSlope_ph),
-                                'SD' = c(p_intSD_ph, p_intPairSD_ph, p_noiseSD_ph, p_effortSD_ph),
-                                'LCI_95' = c(p_intQuant_ph[[1]], p_intPairQuant_ph[[1]], 
-                                             p_noiseQuant_ph[[1]], p_effortQuant_ph[[1]]),
-                                'UCI_95' = c(p_intQuant_ph[[2]], p_intPairQuant_ph[[2]], 
-                                             p_noiseQuant_ph[[2]], p_effortQuant_ph[[2]]),
-                                'F_score' = posthoc_model$f$gamma,
-                                'Odds_ratio' = c(NA, NA, p_noiseOR_ph, p_effortOR_ph), 
-                                'OR_LCI' = c(NA, NA, p_noiseOR_LCI_ph, p_effortOR_LCI_ph),
-                                'OR_UCI' = c(NA, NA, p_noiseOR_UCI_ph, p_effortOR_UCI_ph))
+                                'mean' = c(p_intMean_inf, p_intPairMean_inf, p_noiseSlope_inf, p_effortSlope_inf),
+                                'SD' = c(p_intSD_inf, p_intPairSD_inf, p_noiseSD_inf, p_effortSD_inf),
+                                'LCI_95' = c(p_intQuant_inf[[1]], p_intPairQuant_inf[[1]], 
+                                             p_noiseQuant_inf[[1]], p_effortQuant_inf[[1]]),
+                                'UCI_95' = c(p_intQuant_inf[[2]], p_intPairQuant_inf[[2]], 
+                                             p_noiseQuant_inf[[2]], p_effortQuant_inf[[2]]),
+                                'F_score' = inference_model$f$gamma,
+                                'Odds_ratio' = c(NA, NA, p_noiseOR_inf, p_effortOR_inf), 
+                                'OR_LCI' = c(NA, NA, p_noiseOR_LCI_inf, p_effortOR_LCI_inf),
+                                'OR_UCI' = c(NA, NA, p_noiseOR_UCI_inf, p_effortOR_UCI_inf))
 
-  ## FOR SI TABLES:
-  p_params_posthoc %>%
+  ## FOR TABLE 4:
+  p_params_inference %>%
     kbl(digits = 3) %>%
     kable_styling(bootstrap_options = 'striped', font_size = 14, full_width = FALSE, position = 'left')
   
@@ -114,7 +114,7 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
   noiseScaled <- seq(min(noiseStd), max(noiseStd), length.out = 100)  
   
   #extract relevant columns from the simulations list (intercept/s and slope for this covariate)
-  simsNoise <- posthoc_model$sims.list$gamma[,c(1:3)]
+  simsNoise <- inference_model$sims.list$gamma[,c(1:3)]
   
   #set up matrices
   f1 <- matrix(nrow = nrow(simsNoise), ncol = length(noiseScaled))
@@ -136,7 +136,7 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
   noiseBT <- (noiseScaled * zsd_noise) + zmean_noise
   
   #set up dataframe
-  noisePlotPosthoc <- data.frame(x = rep(noiseBT, 2),
+  noisePlotinference <- data.frame(x = rep(noiseBT, 2),
                                  y = c(apply(f1bt, 2, mean), apply(f2bt, 2, mean)),
                                  lo = c(apply(f1bt, 2, quantile, probs = 0.025), 
                                         apply(f2bt, 2, quantile, probs = 0.025)),
@@ -163,7 +163,7 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
   effortScaled <- seq(min(effortStd), max(effortStd), length.out = 100)
   
   #extract relevant columns from the posterior draws (intercept/s and slope for this covariate)
-  simsEffort <- posthoc_model$sims.list$gamma[,c(1:2,4)]
+  simsEffort <- inference_model$sims.list$gamma[,c(1:2,4)]
   
   #set up matrices
   g1 <- matrix(nrow = nrow(simsEffort), ncol = length(effortScaled))
@@ -185,7 +185,7 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
   effortBT <- (effortScaled * zsd_effort) + zmean_effort
   
   #set up dataframe
-  effortPlotPosthoc <- data.frame(x = rep(effortBT, 2),
+  effortPlotinference <- data.frame(x = rep(effortBT, 2),
                                   y = c(apply(g1bt, 2, mean), apply(g2bt, 2, mean)),
                                   lo = c(apply(g1bt, 2, quantile, probs = 0.025), 
                                          apply(g2bt, 2, quantile, probs = 0.025)),
@@ -198,7 +198,7 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
 ## 4) Create marginal plots (detection) ####
   
 ## NOISE
-  nnPH <- ggplot(noisePlotPosthoc, aes(x, y)) +
+  nnInf <- ggplot(noisePlotinference, aes(x, y)) +
     geom_ribbon(aes(ymin = lo, ymax = hi, fill = grp), alpha = 0.3) +
     geom_line(size = 1.5, aes(color = grp, linetype = grp)) +
     ylab('Weekly detection probability (p) \u00B1 95% CI') + xlab('Noise (dBFS)') +
@@ -219,11 +219,27 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
           #legend.position = 'none',
           legend.background = element_rect(fill='transparent')
     ) 
-  nnPH
-  #don't include this figure; use one from step03 model instead
+  nnInf
   
-  ## EFFORT
-  eePH <- ggplot(effortPlotPosthoc, aes(x, y)) +
+  
+  ## Predict a couple values for reporting:
+  
+    #p at min noise
+    noisePlotinference$y[noisePlotinference$x == min(noisePlotinference$x) & 
+                         noisePlotinference$grp %in% 'Non-pairs']         #0.13 for non-pairs
+    noisePlotinference$y[noisePlotinference$x == min(noisePlotinference$x) & 
+                         noisePlotinference$grp %in% 'Pairs']             #0.45 for non-pairs
+    
+    #p at mean noise
+    noiseMeanIndex <- noisePlotinference$x[which.min(abs(noisePlotinference$x- zmean_noise))] #find x value closest to mean
+    noisePlotinference$y[noisePlotinference$x == noiseMeanIndex & 
+                         noisePlotinference$grp %in% 'Non-pairs']         #0.03 for non-pairs
+    noisePlotinference$y[noisePlotinference$x == noiseMeanIndex & 
+                         noisePlotinference$grp %in% 'Pairs']             #0.16 for non-pairs
+    
+  
+## EFFORT
+  eeInf <- ggplot(effortPlotinference, aes(x, y)) +
     geom_ribbon(aes(ymin = lo, ymax = hi, fill = grp), alpha = 0.3) +
     geom_line(size = 1.5, aes(color = grp, linetype = grp)) +
     ylab('Weekly detection probability (p) \u00B1 95% CI') + 
@@ -245,64 +261,90 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
           #legend.position = 'none',
           legend.background = element_rect(fill='transparent')
     )   
-  eePH
-  #don't include this figure; use one from step03 model instead
+  eeInf
+  
+  ## Predict a couple values for reporting (intended 3360 min):
+  effortPlotinference$y[effortPlotinference$x == 3360 &
+                        effortPlotinference$grp %in% 'Non-pairs']  #0.04 for non-pairs
+  effortPlotinference$y[effortPlotinference$x == 3360 &
+                        effortPlotinference$grp %in% 'Pairs']      #0.19 for pairs
+  
+  
+## Combine and export
+  Fig3 <- ggarrange(nnInf + rremove("ylab"), eeInf + rremove("ylab"), 
+                    labels = c("a", "b"), font.label = list(size = 24), 
+                    vjust = c(1.5,1.5), hjust = c(-4,-3.5), 
+                    ncol = 1, nrow = 2, 
+                    common.legend = TRUE, legend = 'right') +
+    theme(plot.margin = margin(0.1,1,0.1,1, "cm"))
+  
+  Fig3_shared_axis <- annotate_figure(Fig3, 
+                                      left = textGrob('Weekly detection probability (p) \u00B1 95% CI', 
+                                                      rot = 90, vjust = 2, hjust = 0.5,
+                                                      gp = gpar(fontsize = 18)))
+  
+  ## FOR FIGURE 3
+  tiff(filename = 'figures/fig3new.tif', height = 5600, width = 5200, units = 'px',
+       res = '800', compression = 'lzw')
+  print(Fig3_shared_axis)
+  dev.off()  
+  
 
   
 ## -----------------------------------------------------------------------------  
 ## 5) Explore covariate effects on occupancy (psi) ####
   
 ## Plot posterior means and CI (50% = thick lines) (95% = thin lines):
-  MCMCplot(posthoc_model, params = 'beta', main = '"psi" parameters', ref_ovl = TRUE)
+  MCMCplot(inference_model, params = 'beta', main = '"psi" parameters', ref_ovl = TRUE)
   #[1]: intercept, [2]: NR500, [3]: study area, [4]: BO_total
   
 ## Calculate means, SDs, and odds ratios:
   
   #intercepts
-  psi_intMean_ph  = mean(posthoc_model$sims.list$beta[,1])
-  psi_intSD_ph    = sd(posthoc_model$sims.list$beta[,1])
-  psi_intQuant_ph = quantile(posthoc_model$sims.list$beta[,1], probs = c(0.025, 0.975))
+  psi_intMean_inf  = mean(inference_model$sims.list$beta[,1])
+  psi_intSD_inf    = sd(inference_model$sims.list$beta[,1])
+  psi_intQuant_inf = quantile(inference_model$sims.list$beta[,1], probs = c(0.025, 0.975))
   
   #forest suitability mean 500m
-  psi_forestSlope_ph = mean(posthoc_model$sims.list$beta[,2])
-  psi_forestSD_ph    = sd(posthoc_model$sims.list$beta[,2])
-  psi_forestQuant_ph = quantile(posthoc_model$sims.list$beta[,2], probs = c(0.025, 0.975))
-  psi_forestOR_ph    = median(exp(posthoc_model$sims.list$beta[,2]))       #odds ratio - use median
-  psi_forestOR_LCI_ph = quantile(exp(posthoc_model$sims.list$beta[,2]), probs = c(0.025)) #odds ratio LCI
-  psi_forestOR_UCI_ph = quantile(exp(posthoc_model$sims.list$beta[,2]), probs = c(0.975)) #odds ratio UCI
+  psi_forestSlope_inf = mean(inference_model$sims.list$beta[,2])
+  psi_forestSD_inf    = sd(inference_model$sims.list$beta[,2])
+  psi_forestQuant_inf = quantile(inference_model$sims.list$beta[,2], probs = c(0.025, 0.975))
+  psi_forestOR_inf    = median(exp(inference_model$sims.list$beta[,2]))       #odds ratio - use median
+  psi_forestOR_LCI_inf = quantile(exp(inference_model$sims.list$beta[,2]), probs = c(0.025)) #odds ratio LCI
+  psi_forestOR_UCI_inf = quantile(exp(inference_model$sims.list$beta[,2]), probs = c(0.975)) #odds ratio UCI
   
   #study area
-  psi_areaSlope_ph = mean(posthoc_model$sims.list$beta[,3])
-  psi_areaSD_ph    = sd(posthoc_model$sims.list$beta[,3])
-  psi_areaQuant_ph = quantile(posthoc_model$sims.list$beta[,3], probs = c(0.025, 0.975))
-  psi_areaOR_ph    = median(exp(posthoc_model$sims.list$beta[,3]))         #odds ratio - use median
-  psi_areaOR_LCI_ph = quantile(exp(posthoc_model$sims.list$beta[,3]), probs = c(0.025))  #odds ratio LCI
-  psi_areaOR_UCI_ph = quantile(exp(posthoc_model$sims.list$beta[,3]), probs = c(0.975))  #odds ratio UCI
+  psi_areaSlope_inf = mean(inference_model$sims.list$beta[,3])
+  psi_areaSD_inf    = sd(inference_model$sims.list$beta[,3])
+  psi_areaQuant_inf = quantile(inference_model$sims.list$beta[,3], probs = c(0.025, 0.975))
+  psi_areaOR_inf    = median(exp(inference_model$sims.list$beta[,3]))         #odds ratio - use median
+  psi_areaOR_LCI_inf = quantile(exp(inference_model$sims.list$beta[,3]), probs = c(0.025))  #odds ratio LCI
+  psi_areaOR_UCI_inf = quantile(exp(inference_model$sims.list$beta[,3]), probs = c(0.975))  #odds ratio UCI
   
   #total barred owl
-  psi_BOSlope_ph = mean(posthoc_model$sims.list$beta[,4])
-  psi_BOSD_ph    = sd(posthoc_model$sims.list$beta[,4])
-  psi_BOQuant_ph = quantile(posthoc_model$sims.list$beta[,4], probs = c(0.025, 0.975))
-  psi_BOOR_ph    = median(exp(posthoc_model$sims.list$beta[,4]))           #odds ratio - use median
-  psi_BOOR_LCI_ph = quantile(exp(posthoc_model$sims.list$beta[,4]), probs = c(0.025)) #odds ratio LCI
-  psi_BOOR_UCI_ph = quantile(exp(posthoc_model$sims.list$beta[,4]), probs = c(0.975)) #odds ratio UCI
+  psi_BOSlope_inf = mean(inference_model$sims.list$beta[,4])
+  psi_BOSD_inf    = sd(inference_model$sims.list$beta[,4])
+  psi_BOQuant_inf = quantile(inference_model$sims.list$beta[,4], probs = c(0.025, 0.975))
+  psi_BOOR_inf    = median(exp(inference_model$sims.list$beta[,4]))           #odds ratio - use median
+  psi_BOOR_LCI_inf = quantile(exp(inference_model$sims.list$beta[,4]), probs = c(0.025)) #odds ratio LCI
+  psi_BOOR_UCI_inf = quantile(exp(inference_model$sims.list$beta[,4]), probs = c(0.975)) #odds ratio UCI
   
-  psi_params_posthoc <- data.frame('parameter' = rep('psi', 4),
+  psi_params_inference <- data.frame('parameter' = rep('psi', 4),
                                   'covariate' = c('Intercept','Forest suitability mean 200m',
                                                   'Study area', 'Total barred owl calling'),
-                                  'mean' = c(psi_intMean_ph, psi_forestSlope_ph, psi_areaSlope_ph,
-                                             psi_BOSlope_ph),
-                                  'SD' = c(psi_intSD_ph, psi_forestSD_ph, psi_areaSD_ph, psi_BOSD_ph),
-                                  'LCI_95' = c(psi_intQuant_ph[[1]], psi_forestQuant_ph[[1]],
-                                               psi_areaQuant_ph[[1]], psi_BOQuant_ph[[1]]),
-                                  'UCI_95' = c(psi_intQuant_ph[[2]], psi_forestQuant_ph[[2]],
-                                               psi_areaQuant_ph[[2]], psi_BOQuant_ph[[2]]),
-                                  'F_score' = posthoc_model$f$beta,
-                                  'Odds_ratio' = c(NA, psi_forestOR_ph, psi_areaOR_ph, psi_BOOR_ph),
-                                  'OR_LCI' = c(NA, psi_forestOR_LCI_ph, psi_areaOR_LCI_ph, psi_BOOR_LCI_ph),
-                                  'OR_UCI' = c(NA, psi_forestOR_UCI_ph, psi_areaOR_UCI_ph, psi_BOOR_UCI_ph))
+                                  'mean' = c(psi_intMean_inf, psi_forestSlope_inf, psi_areaSlope_inf,
+                                             psi_BOSlope_inf),
+                                  'SD' = c(psi_intSD_inf, psi_forestSD_inf, psi_areaSD_inf, psi_BOSD_inf),
+                                  'LCI_95' = c(psi_intQuant_inf[[1]], psi_forestQuant_inf[[1]],
+                                               psi_areaQuant_inf[[1]], psi_BOQuant_inf[[1]]),
+                                  'UCI_95' = c(psi_intQuant_inf[[2]], psi_forestQuant_inf[[2]],
+                                               psi_areaQuant_inf[[2]], psi_BOQuant_inf[[2]]),
+                                  'F_score' = inference_model$f$beta,
+                                  'Odds_ratio' = c(NA, psi_forestOR_inf, psi_areaOR_inf, psi_BOOR_inf),
+                                  'OR_LCI' = c(NA, psi_forestOR_LCI_inf, psi_areaOR_LCI_inf, psi_BOOR_LCI_inf),
+                                  'OR_UCI' = c(NA, psi_forestOR_UCI_inf, psi_areaOR_UCI_inf, psi_BOOR_UCI_inf))
   ## FOR SI TABLES:  
-  psi_params_posthoc %>%
+  psi_params_inference %>%
     kbl(digits = 3) %>%
     kable_styling(bootstrap_options = 'striped', font_size = 14, full_width = FALSE, position = 'left')
   
@@ -311,58 +353,58 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
 ## 6) Explore covariate effects on conditional pair occupancy (R) ####
   
 ## Plot posterior means and CI (50% = thick lines) (95% = thin lines):
-  MCMCplot(posthoc_model, params = 'beta2', main = '"R" parameters', ref_ovl = TRUE)
+  MCMCplot(inference_model, params = 'beta2', main = '"R" parameters', ref_ovl = TRUE)
   #[1]: intercept, [2]: NR500, [3]: study area, [4]: BO_total
   
 ## Calculate means, SDs, and odds ratios:
   
   #intercepts
-  r_intMean_ph  = mean(posthoc_model$sims.list$beta2[,1])
-  r_intSD_ph    = sd(posthoc_model$sims.list$beta2[,1])
-  r_intQuant_ph = quantile(posthoc_model$sims.list$beta2[,1], probs = c(0.025, 0.975))
+  r_intMean_inf  = mean(inference_model$sims.list$beta2[,1])
+  r_intSD_inf    = sd(inference_model$sims.list$beta2[,1])
+  r_intQuant_inf = quantile(inference_model$sims.list$beta2[,1], probs = c(0.025, 0.975))
   
   #forest suitability weighted mean 200m
-  r_forestSlope_ph = mean(posthoc_model$sims.list$beta2[,2])
-  r_forestSD_ph    = sd(posthoc_model$sims.list$beta2[,2])
-  r_forestQuant_ph = quantile(posthoc_model$sims.list$beta2[,2], probs = c(0.025, 0.975))
-  r_forestOR_ph    = median(exp(posthoc_model$sims.list$beta2[,2]))        #odds ratio - use median
-  r_forestOR_LCI_ph = quantile(exp(posthoc_model$sims.list$beta2[,2]), probs = c(0.025)) #odds ratio LCI
-  r_forestOR_UCI_ph = quantile(exp(posthoc_model$sims.list$beta2[,2]), probs = c(0.975)) #odds ratio UCI
+  r_forestSlope_inf = mean(inference_model$sims.list$beta2[,2])
+  r_forestSD_inf    = sd(inference_model$sims.list$beta2[,2])
+  r_forestQuant_inf = quantile(inference_model$sims.list$beta2[,2], probs = c(0.025, 0.975))
+  r_forestOR_inf    = median(exp(inference_model$sims.list$beta2[,2]))        #odds ratio - use median
+  r_forestOR_LCI_inf = quantile(exp(inference_model$sims.list$beta2[,2]), probs = c(0.025)) #odds ratio LCI
+  r_forestOR_UCI_inf = quantile(exp(inference_model$sims.list$beta2[,2]), probs = c(0.975)) #odds ratio UCI
   
   #study area
-  r_areaSlope_ph = mean(posthoc_model$sims.list$beta2[,3])
-  r_areaSD_ph    = sd(posthoc_model$sims.list$beta2[,3])
-  r_areaQuant_ph = quantile(posthoc_model$sims.list$beta2[,3], probs = c(0.025, 0.975))
-  r_areaOR_ph    = median(exp(posthoc_model$sims.list$beta2[,3]))          #odds ratio - use median
-  r_areaOR_LCI_ph = quantile(exp(posthoc_model$sims.list$beta2[,3]), probs = c(0.025)) #odds ratio LCI
-  r_areaOR_UCI_ph = quantile(exp(posthoc_model$sims.list$beta2[,3]), probs = c(0.975)) #odds ratio UCI
+  r_areaSlope_inf = mean(inference_model$sims.list$beta2[,3])
+  r_areaSD_inf    = sd(inference_model$sims.list$beta2[,3])
+  r_areaQuant_inf = quantile(inference_model$sims.list$beta2[,3], probs = c(0.025, 0.975))
+  r_areaOR_inf    = median(exp(inference_model$sims.list$beta2[,3]))          #odds ratio - use median
+  r_areaOR_LCI_inf = quantile(exp(inference_model$sims.list$beta2[,3]), probs = c(0.025)) #odds ratio LCI
+  r_areaOR_UCI_inf = quantile(exp(inference_model$sims.list$beta2[,3]), probs = c(0.975)) #odds ratio UCI
   
   #total barred owl
-  r_BOSlope_ph = mean(posthoc_model$sims.list$beta2[,4])
-  r_BOSD_ph    = sd(posthoc_model$sims.list$beta2[,4])
-  r_BOQuant_ph = quantile(posthoc_model$sims.list$beta2[,4], probs = c(0.025, 0.975))
-  r_BOOR_ph    = median(exp(posthoc_model$sims.list$beta2[,4]))            #odds ratio - use median
-  r_BOOR_LCI_ph = quantile(exp(posthoc_model$sims.list$beta2[,4]), probs = c(0.025)) #odds ratio LCI
-  r_BOOR_UCI_ph = quantile(exp(posthoc_model$sims.list$beta2[,4]), probs = c(0.975))     #odds ratio UCI
+  r_BOSlope_inf = mean(inference_model$sims.list$beta2[,4])
+  r_BOSD_inf    = sd(inference_model$sims.list$beta2[,4])
+  r_BOQuant_inf = quantile(inference_model$sims.list$beta2[,4], probs = c(0.025, 0.975))
+  r_BOOR_inf    = median(exp(inference_model$sims.list$beta2[,4]))            #odds ratio - use median
+  r_BOOR_LCI_inf = quantile(exp(inference_model$sims.list$beta2[,4]), probs = c(0.025)) #odds ratio LCI
+  r_BOOR_UCI_inf = quantile(exp(inference_model$sims.list$beta2[,4]), probs = c(0.975))     #odds ratio UCI
   
-  r_params_posthoc <- data.frame('parameter' = rep('R', 4),
+  r_params_inference <- data.frame('parameter' = rep('R', 4),
                                 'covariate' = c('Intercept','Forest suitability mean 200m','Study area',
                                                 'Total barred owl calling'),
-                                'mean' = c(r_intMean_ph, r_forestSlope_ph, r_areaSlope_ph,
-                                           r_BOSlope_ph),
-                                'SD' = c(r_intSD_ph, r_forestSD_ph, r_areaSD_ph, r_BOSD_ph),
-                                'LCI_95' = c(r_intQuant_ph[[1]], r_forestQuant_ph[[1]],
-                                             r_areaQuant_ph[[1]], r_BOQuant_ph[[1]]),
-                                'UCI_95' = c(r_intQuant_ph[[2]], r_forestQuant_ph[[2]],
-                                             r_areaQuant_ph[[2]], r_BOQuant_ph[[2]]),
-                                'F_score' = posthoc_model$f$beta2,
-                                'Odds_ratio' = c(NA, r_forestOR_ph, r_areaOR_ph, r_BOOR_ph),
-                                'OR_LCI' = c(NA, exp(r_forestQuant_ph[[1]]),
-                                             exp(r_areaQuant_ph[[1]]), exp(r_BOQuant_ph[[1]])),
-                                'OR_UCI' = c(NA, exp(r_forestQuant_ph[[2]]),
-                                             exp(r_areaQuant_ph[[2]]), exp(r_BOQuant_ph[[2]])))
+                                'mean' = c(r_intMean_inf, r_forestSlope_inf, r_areaSlope_inf,
+                                           r_BOSlope_inf),
+                                'SD' = c(r_intSD_inf, r_forestSD_inf, r_areaSD_inf, r_BOSD_inf),
+                                'LCI_95' = c(r_intQuant_inf[[1]], r_forestQuant_inf[[1]],
+                                             r_areaQuant_inf[[1]], r_BOQuant_inf[[1]]),
+                                'UCI_95' = c(r_intQuant_inf[[2]], r_forestQuant_inf[[2]],
+                                             r_areaQuant_inf[[2]], r_BOQuant_inf[[2]]),
+                                'F_score' = inference_model$f$beta2,
+                                'Odds_ratio' = c(NA, r_forestOR_inf, r_areaOR_inf, r_BOOR_inf),
+                                'OR_LCI' = c(NA, exp(r_forestQuant_inf[[1]]),
+                                             exp(r_areaQuant_inf[[1]]), exp(r_BOQuant_inf[[1]])),
+                                'OR_UCI' = c(NA, exp(r_forestQuant_inf[[2]]),
+                                             exp(r_areaQuant_inf[[2]]), exp(r_BOQuant_inf[[2]])))
   ## FOR SI TABLES:  
-  r_params_posthoc %>%
+  r_params_inference %>%
     kbl(digits = 3) %>%
     kable_styling(bootstrap_options = 'striped', font_size = 14, full_width = FALSE, position = 'left')
   
@@ -385,8 +427,8 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
   nr500scaled <- seq(min(nr500std), max(nr500std), length.out = 100)
   
   #extract relevant columns from the posterior draws (intercept/s and slope for this covariate)
-  simsNRpsi <- posthoc_model$sims.list$beta[,c(1,2,3)]  #3 is the col for study area
-  simsNRr   <- posthoc_model$sims.list$beta2[,c(1,2,3)] #3 is the col for study area
+  simsNRpsi <- inference_model$sims.list$beta[,c(1,2,3)]  #3 is the col for study area
+  simsNRr   <- inference_model$sims.list$beta2[,c(1,2,3)] #3 is the col for study area
   
   #set up matrices
   l1 <- matrix(nrow = nrow(simsNRpsi), ncol = length(nr500scaled))
@@ -427,7 +469,7 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
   nrBT <- (nr500scaled * zsd_nr500) + zmean_nr500
   
   #set up dataframe
-  NRplotPosthoc <- data.frame(x = rep(nrBT,4),
+  NRplotinference <- data.frame(x = rep(nrBT,4),
                               y = c(apply(occBTnr_OLY, 2, mean), apply(pairBTnr_OLY, 2, mean),
                                     apply(occBTnr_COA, 2, mean), apply(pairBTnr_COA, 2, mean)),
                               lo = c(apply(occBTnr_OLY, 2, quantile, probs = 0.025), 
@@ -449,8 +491,8 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
   areaScaled <- c(0,1)
   
   #extract relevant columns from the posterior draws (intercept/s and slope for this covariate)
-  simsAreaPsi <- posthoc_model$sims.list$beta[,c(1,3)]  
-  simsAreaR <- posthoc_model$sims.list$beta2[,c(1,3)]  
+  simsAreaPsi <- inference_model$sims.list$beta[,c(1,3)]  
+  simsAreaR <- inference_model$sims.list$beta2[,c(1,3)]  
   
   #set up matrices
   m1 <- matrix(nrow = nrow(simsAreaPsi), ncol = length(areaScaled))
@@ -478,7 +520,7 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
   occNoPairBTarea <- occBTarea * (1 - rBTarea)  #prob occ by non-pair (psi * (1-R))
   
   #set up dataframe
-  areaPlotPH <- data.frame(x = rep(areaScaled,3),
+  areaPlotInf <- data.frame(x = rep(areaScaled,3),
                            y = c(apply(occBTarea, 2, mean), apply(pairBTarea, 2, mean), 
                                  apply(occNoPairBTarea, 2, mean)),
                            lo = c(apply(occBTarea, 2, quantile, probs = 0.025), 
@@ -505,8 +547,8 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
   boTotalScaled <- seq(min(boTotalStd$total_std), max(boTotalStd$total_std), length.out = 100)
   
   #extract relevant columns from the posterior draws (intercept/s and slope for this covariate)
-  simsBOtotalPsi <- posthoc_model$sims.list$beta[,c(1,3,4)]  #3 is the column for study area
-  simsBOtotalR   <- posthoc_model$sims.list$beta2[,c(1,3,4)] #3 is the column for study area
+  simsBOtotalPsi <- inference_model$sims.list$beta[,c(1,3,4)]  #3 is the column for study area
+  simsBOtotalR   <- inference_model$sims.list$beta2[,c(1,3,4)] #3 is the column for study area
   
   #set up matrices
   n1 <- matrix(nrow = nrow(simsBOtotalPsi), ncol = length(boTotalScaled))
@@ -545,7 +587,7 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
   boTotalBT <- (boTotalScaled * zsd_boTotal) + zmean_boTotal
   
   #set up dataframe
-  boTotalPlotPosthoc <- data.frame(x = rep(boTotalBT,2),
+  boTotalPlotinference <- data.frame(x = rep(boTotalBT,2),
                                     y = c(apply(occBTbo_OLY, 2, mean), apply(pairBTbo_OLY, 2, mean),
                                           apply(occBTbo_COA, 2, mean), apply(pairBTbo_COA, 2, mean)),
                                     lo = c(apply(occBTbo_OLY, 2, quantile, probs = 0.025), 
@@ -565,7 +607,7 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
 ## 8. Create marginal plots (occupancy) ####
   
 ## NR 500
-  rr <- ggplot(NRplotPosthoc, aes(x/10000, y)) +     #if index mean: x/10000
+  rr <- ggplot(NRplotinference, aes(x/10000, y)) +     #if index mean: x/10000
     geom_ribbon(aes(ymin = lo, ymax = hi, fill = grp), alpha = 0.3) +
     geom_line(size = 1.5, aes(color = grp, linetype = grp)) +
     facet_grid(~study_area) +
@@ -597,12 +639,12 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
 ## STUDY AREA 
   
   #add study area names to dataframe
-  areaPlotPH$x <- ifelse(areaPlotPH$x == 0, 'OLY', 'COA')
-  areaPlotPH$grp2 <- ifelse(areaPlotPH$grp %in% 'Pair', 'Pair\noccupancy', 
-                            ifelse(areaPlotPH$grp %in% 'Any owl', 'Use', 'Unoccupied'))
-  areaPlotPH <- areaPlotPH[areaPlotPH$grp2 %in% c('Use','Pair\noccupancy'),]
+  areaPlotInf$x <- ifelse(areaPlotInf$x == 0, 'OLY', 'COA')
+  areaPlotInf$grp2 <- ifelse(areaPlotInf$grp %in% 'Pair', 'Pair\noccupancy', 
+                            ifelse(areaPlotInf$grp %in% 'Any owl', 'Use', 'Unoccupied'))
+  areaPlotInf <- areaPlotInf[areaPlotInf$grp2 %in% c('Use','Pair\noccupancy'),]
 
-  aa <- ggplot(areaPlotPH, aes(x, y, linetype = grp2)) +
+  aa <- ggplot(areaPlotInf, aes(x, y, linetype = grp2)) +
     geom_pointrange(aes(ymin = lo, ymax = hi, color = grp2, shape = grp2), 
                     size = 1, position = position_dodge(width = 0.3)) +
     ylab('Probability \u00B1 95 CI') + xlab('Study Area') +
@@ -643,7 +685,7 @@ posthoc_model <- readRDS('results/05a_model_posthoc_norm1priors/model_output.rds
   
   
 ## BARRED OWL TOTAL
-  bb <- ggplot(boTotalPlotPosthoc, aes(x, y, linetype = grp)) +
+  bb <- ggplot(boTotalPlotinference, aes(x, y, linetype = grp)) +
     geom_ribbon(aes(ymin = lo, ymax = hi, fill = grp), alpha = 0.3) +
     geom_line(size = 1.5, aes(color = grp)) +
     facet_grid(~study_area) +

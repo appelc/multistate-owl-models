@@ -36,7 +36,7 @@ noArea_model <- readRDS('results/06_model_posthoc_norm1priors_marginals/model_ou
 
 
 ## -----------------------------------------------------------------------------  
-## 2) Explore covariate effects on occupancy (psi) ####
+## 2) Explore covariate effects on landscape use (psi) ####
 
 ## Plot posterior means and CI (50% = thick lines) (95% = thin lines):
   MCMCplot(noArea_model, params = 'beta', main = '"psi" parameters', ref_ovl = TRUE)
@@ -48,6 +48,7 @@ noArea_model <- readRDS('results/06_model_posthoc_norm1priors_marginals/model_ou
   psi_intMean_na  = mean(noArea_model$sims.list$beta[,1])
   psi_intSD_na    = sd(noArea_model$sims.list$beta[,1])
   psi_intQuant_na = quantile(noArea_model$sims.list$beta[,1], probs = c(0.025, 0.975))
+  
   
   #forest suitability mean 500m
   psi_forestSlope_na = mean(noArea_model$sims.list$beta[,2])
@@ -85,11 +86,11 @@ noArea_model <- readRDS('results/06_model_posthoc_norm1priors_marginals/model_ou
 
 
 ## -----------------------------------------------------------------------------  
-## 3) Explore covariate effects on conditional pair occupancy (R) ####
+## 3) Explore covariate effects on probability of pair given use (R) ####
 
   ## Plot posterior means and CI (50% = thick lines) (95% = thin lines):
   MCMCplot(noArea_model, params = 'beta2', main = '"R" parameters', ref_ovl = TRUE)
-  #[1]: intercept, [2]: NR500, [3]: study area, [4]: BO_total
+  #[1]: intercept, [2]: NR500, [3]: BO_total
 
   ## Calculate means, SDs, and odds ratios:
   
@@ -132,7 +133,7 @@ noArea_model <- readRDS('results/06_model_posthoc_norm1priors_marginals/model_ou
 
 
 ## -----------------------------------------------------------------------------
-## 4) Calculate predicted/fitted values (occupancy) ####
+## 4) Calculate predicted/fitted values (use/occupancy) ####
 
 ## FOREST SUITABILITY MEAN ####
   
@@ -159,36 +160,43 @@ noArea_model <- readRDS('results/06_model_posthoc_norm1priors_marginals/model_ou
   #multiply intercept by 1; slope by value of the covariate
   for(i in 1:nrow(simsNRpsi)){
     for(j in 1:length(nr500scaled)){
-      l1[i, j] <- sum(simsNRpsi[i, ] * c(1, nr500scaled[j])) #psi for OLY (0)
+      l1[i, j] <- sum(simsNRpsi[i, ] * c(1, nr500scaled[j])) #l1: psi
     }
   }
   for(i in 1:nrow(simsNRr)){
     for(j in 1:length(nr500scaled)){
-      l2[i, j] <- sum(simsNRr[i, ] * c(1, nr500scaled[j]))  #R for OLY (0)
+      l2[i, j] <- sum(simsNRr[i, ] * c(1, nr500scaled[j]))   #l2: R
     }
   }
   
   #back-transform from logit
-  occBTnr <- plogis(l1)
-  rBTsuit <- plogis(l2)
+  psiBTnr <- plogis(l1)        #prob use regardless of state (psi)
+  rBTsuit <- plogis(l2)        #prob of being paired (R)
   
-  #calculate pair occupancy, etc.
-  pairBTnr  <- occBTnr * rBTsuit      #prob occ by pairs (psi*R)
-  unoccBTnr <- 1 - occBTnr            #prob unoccupied (1 - psi)
-  #occNopairBTnr <- occBTnr * (1 - rBTsuit)        #prob occ by non-pair (psi * (1-R))
+  #calculate derived parameters
+  pairBTnr  <- psiBTnr * rBTsuit        #prob occ by pairs (psi*R)
+  nopairBTnr <- psiBTnr * (1 - rBTsuit) #prob occ by non-pair (psi * (1-R)) 
+  unoccBTnr <- 1 - psiBTnr              #prob unoccupied (1 - psi)
   
   #convert the scaled covariate values that I used to their real scale
   nrBT <- (nr500scaled * zsd_nr500) + zmean_nr500
   
   #set up dataframe
-  NRplotNoArea <- data.frame(x = rep(nrBT,2),
-                             y = c(apply(occBTnr, 2, mean), apply(pairBTnr, 2, mean)),
-                             lo = c(apply(occBTnr, 2, quantile, probs = 0.025), 
-                                    apply(pairBTnr, 2, quantile, probs = 0.025)),
-                             hi = c(apply(occBTnr, 2, quantile, probs = 0.975), 
-                                    apply(pairBTnr, 2, quantile, probs = 0.975)),
-                             grp = c(rep('Use', length(nrBT)), rep('Pair\noccupancy', length(nrBT))))
-
+  NRplotNoArea <- data.frame(x = rep(nrBT,4),
+                             y = c(apply(psiBTnr, 2, mean),          #psi
+                                   apply(pairBTnr, 2, mean),         #psi*R
+                                   apply(nopairBTnr, 2, mean),       #psi*(1-R)
+                                   apply(rBTsuit, 2, mean)),         #R
+                             lo = c(apply(psiBTnr, 2, quantile, probs = 0.025), 
+                                    apply(pairBTnr, 2, quantile, probs = 0.025),
+                                    apply(nopairBTnr, 2, quantile, probs = 0.025),
+                                    apply(rBTsuit, 2, quantile, probs = 0.025)),
+                             hi = c(apply(psiBTnr, 2, quantile, probs = 0.975), 
+                                    apply(pairBTnr, 2, quantile, probs = 0.975),
+                                    apply(nopairBTnr, 2, quantile, probs = 0.975),
+                                    apply(rBTsuit, 2, quantile, probs = 0.975)),
+                             grp = c(rep('Landscape\nuse', length(nrBT)), rep('Pair\noccupancy', length(nrBT)),
+                                     rep('Non-pair use', length(nrBT)), rep('R', length(nrBT))))
 
 
 ## BARRED OWL TOTAL ####
@@ -215,50 +223,59 @@ noArea_model <- readRDS('results/06_model_posthoc_norm1priors_marginals/model_ou
   #multiply intercept by 1; slope by value of the covariate
   for(i in 1:nrow(simsBOtotalPsi)){
     for(j in 1:length(boTotalScaled)){
-      n1[i, j] <- sum(simsBOtotalPsi[i, ] * c(1, boTotalScaled[j]))
+      n1[i, j] <- sum(simsBOtotalPsi[i, ] * c(1, boTotalScaled[j])) #n1: psi
     }
   }
   for(i in 1:nrow(simsBOtotalR)){
     for(j in 1:length(boTotalScaled)){
-      n2[i, j] <- sum(simsBOtotalR[i, ] * c(1, boTotalScaled[j]))
+      n2[i, j] <- sum(simsBOtotalR[i, ] * c(1, boTotalScaled[j]))   #n2: R
     }
   }
   
   #back-transform from logit
-  occBTbo <- plogis(n1)
-  rBTbo   <- plogis(n2)
+  psiBTbo <- plogis(n1)         #psi
+  rBTbo   <- plogis(n2)         #R
 
-  #calculate pair occupancy etc.
-  pairBTbo  <- occBTbo * rBTbo      #prob occ by pairs (psi*R)
-  # unoccBTbo <- 1 - occBTbo          #prob unoccupied (1 - psi)
-  # occNoPairBTbo <- occBTbo * (1 - rBTbo)   #prob occ by non-pair (psi * (1-R))
+  #calculate derived parameters
+  pairBTbo  <- psiBTbo * rBTbo         #prob occ by pairs (psi*R)
+  unoccBTbo <- 1 - psiBTbo             #prob unoccupied (1 - psi)
+  nopairBTbo <- psiBTbo * (1 - rBTbo)  #prob occ by non-pair (psi * (1-R))
   
   #convert the scaled covariate values that I used to their real scale
   boTotalBT <- (boTotalScaled * zsd_boTotal) + zmean_boTotal
   
   #set up dataframe
-  boTotalPlotNoArea <- data.frame(x = rep(boTotalBT),
-                                  y = c(apply(occBTbo, 2, mean), apply(pairBTbo, 2, mean)),
-                                  lo = c(apply(occBTbo, 2, quantile, probs = 0.025), 
-                                         apply(pairBTbo, 2, quantile, probs = 0.025)),
-                                  hi = c(apply(occBTbo, 2, quantile, probs = 0.975), 
-                                         apply(pairBTbo, 2, quantile, probs = 0.975)),
-                                  grp = c(rep('Use', length(boTotalBT)), rep('Pair\noccupancy', length(boTotalBT))))
+  boTotalPlotNoArea <- data.frame(x = rep(boTotalBT, 4),
+                                  y = c(apply(psiBTbo, 2, mean),     #psi
+                                        apply(pairBTbo, 2, mean),    #psi*R
+                                        apply(nopairBTbo, 2, mean),  #psi*(1-R)
+                                        apply(rBTbo, 2, mean)),      #R
+                                  lo = c(apply(psiBTbo, 2, quantile, probs = 0.025), 
+                                         apply(pairBTbo, 2, quantile, probs = 0.025),
+                                         apply(nopairBTbo, 2, quantile, probs = 0.025),
+                                         apply(rBTbo, 2, quantile, probs = 0.025)),
+                                  hi = c(apply(psiBTbo, 2, quantile, probs = 0.975), 
+                                         apply(pairBTbo, 2, quantile, probs = 0.975),
+                                         apply(nopairBTbo, 2, quantile, probs = 0.975),
+                                         apply(rBTbo, 2, quantile, probs = 0.975)),
+                                  grp = c(rep('Landscape\nuse', length(boTotalBT)), rep('Pair\noccupancy', length(boTotalBT)),
+                                          rep('Non-pair use', length(boTotalBT)), rep('R', length(boTotalBT))))
   
   
 
 ## -----------------------------------------------------------------------------
-## 5) Create marginal plots (occupancy) ####
+## 5) Create marginal plots (use/occupancy) ####
 
 ## NR 500
-  rr <- ggplot(NRplotNoArea, aes(x/10000, y)) + 
+  rr <- ggplot(NRplotNoArea[NRplotNoArea$grp %in% c('Landscape\nuse','Pair\noccupancy'),], 
+               aes(x/10000, y)) + 
     geom_ribbon(aes(ymin = lo, ymax = hi, fill = grp), alpha = 0.3) +
     geom_line(size = 1.5, aes(color = grp, linetype = grp)) +
-    ylab('Probability of occupancy \u00B1 95 CI') + xlab('Mean NR suitability index (500m)') +
+    ylab('Probability \u00B1 95 CI') + xlab('Mean NR suitability index (500m)') +
     ylim(c(0,1)) +
-    scale_fill_manual(values = c('Use' = 'black', 'Pair\noccupancy' = 'darkblue')) + 
-    scale_colour_manual(values = c('Use' = 'black', 'Pair\noccupancy' = 'darkblue')) +
-    scale_linetype_manual(values = c('Use' = 'solid', 'Pair\noccupancy' = 'twodash')) +
+    scale_fill_manual(values = c('Landscape\nuse' = 'black', 'Pair\noccupancy' = 'darkblue')) +
+    scale_colour_manual(values = c('Landscape\nuse' = 'black', 'Pair\noccupancy' = 'darkblue')) +
+    scale_linetype_manual(values = c('Landscape\nuse' = 'solid', 'Pair\noccupancy' = 'twodash')) +
     geom_rug(data = nr500Raw, mapping = aes(x = MEAN/10000), inherit.aes = FALSE) + 
     theme(panel.background = element_rect(fill = 'transparent'),
           axis.line = element_line(),
@@ -275,15 +292,15 @@ noArea_model <- readRDS('results/06_model_posthoc_norm1priors_marginals/model_ou
  
 
 ## BARRED OWL TOTAL
-bb <- ggplot(boTotalPlotNoArea, aes(x, y)) +
+bb <- ggplot(boTotalPlotNoArea[boTotalPlotNoArea$grp %in% c('Landscape\nuse','Pair\noccupancy'),], aes(x, y)) +
   geom_ribbon(aes(ymin = lo, ymax = hi, fill = grp), alpha = 0.3) +
   geom_line(size = 1.5, aes(color = grp, linetype = grp)) +
-  ylab('Probability of occupancy \u00B1 95 CI') + xlab('Barred owl detections (total)') +
+  ylab('Probability \u00B1 95 CI') + xlab('Barred owl detections (total)') +
   #scale_x_continuous(breaks = seq(0, 8000, 2000), limits = c(0, 5000)) +
   ylim(c(0,1)) +
-  scale_fill_manual(values = c('Use' = 'black', 'Pair\noccupancy' = 'darkblue')) + 
-  scale_colour_manual(values = c('Use' = 'black', 'Pair\noccupancy' = 'darkblue')) +
-  scale_linetype_manual(values = c('Use' = 'solid', 'Pair\noccupancy' = 'twodash')) +
+  scale_fill_manual(values = c('Landscape\nuse' = 'black', 'Pair\noccupancy' = 'darkblue')) +
+  scale_colour_manual(values = c('Landscape\nuse' = 'black', 'Pair\noccupancy' = 'darkblue')) +
+  scale_linetype_manual(values = c('Landscape\nuse' = 'solid', 'Pair\noccupancy' = 'twodash')) +
   geom_rug(data = boTotalRaw, mapping = aes(x = total), inherit.aes = FALSE) +
   theme(panel.background = element_rect(fill = 'transparent'),
         axis.line = element_line(),

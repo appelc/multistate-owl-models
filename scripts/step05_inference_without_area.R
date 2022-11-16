@@ -272,7 +272,8 @@ noArea_model <- readRDS('results/06_model_posthoc_norm1priors_marginals/model_ou
     geom_ribbon(aes(ymin = lo, ymax = hi, fill = grp), alpha = 0.3) +
     geom_line(size = 1.5, aes(color = grp, linetype = grp)) +
     ylab('Probability \u00B1 95 CI') + xlab('Mean NR suitability index (500m)') +
-    ylim(c(0,1)) +
+    # ylim(c(0,1)) +
+    # ylim(c(0,0.7)) +
     scale_fill_manual(values = c('Landscape\nuse' = 'black', 'Pair\noccupancy' = 'darkblue')) +
     scale_colour_manual(values = c('Landscape\nuse' = 'black', 'Pair\noccupancy' = 'darkblue')) +
     scale_linetype_manual(values = c('Landscape\nuse' = 'solid', 'Pair\noccupancy' = 'twodash')) +
@@ -296,8 +297,9 @@ bb <- ggplot(boTotalPlotNoArea[boTotalPlotNoArea$grp %in% c('Landscape\nuse','Pa
   geom_ribbon(aes(ymin = lo, ymax = hi, fill = grp), alpha = 0.3) +
   geom_line(size = 1.5, aes(color = grp, linetype = grp)) +
   ylab('Probability \u00B1 95 CI') + xlab('Barred owl detections (total)') +
-  #scale_x_continuous(breaks = seq(0, 8000, 2000), limits = c(0, 5000)) +
-  ylim(c(0,1)) +
+  # scale_x_continuous(breaks = seq(0, 8000, 2000), limits = c(0, 5000)) +
+  # ylim(c(0,1)) +
+  # ylim(0,0.7) +
   scale_fill_manual(values = c('Landscape\nuse' = 'black', 'Pair\noccupancy' = 'darkblue')) +
   scale_colour_manual(values = c('Landscape\nuse' = 'black', 'Pair\noccupancy' = 'darkblue')) +
   scale_linetype_manual(values = c('Landscape\nuse' = 'solid', 'Pair\noccupancy' = 'twodash')) +
@@ -329,7 +331,7 @@ bb
                                                       gp = gpar(cex = 1.6)))
 
   ## FOR FIGURE 3
-  tiff(filename = 'figures/fig4.tif', height = 5600, width = 5200, units = 'px',
+  tiff(filename = 'figures/fig4_TWS.tif', height = 5600, width = 5200, units = 'px',
        res = '800', compression = 'lzw')
   print(Fig4_shared_axis)
   dev.off()  

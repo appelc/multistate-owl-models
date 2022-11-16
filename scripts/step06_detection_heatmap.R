@@ -6,6 +6,8 @@
 ## CONTENTS:
 ## 1) Import model and extract detection probabilities
 ## 2) Extrapolate for 1-5 stations
+## 3) Create heatmap
+## 4) Use Bayes theorem to calculate Pr(pair occ | any owl detected)
 
 library(data.table)
 library(ggplot2)
@@ -142,5 +144,18 @@ nWk  = 1:8
        res = '800', compression = 'lzw')
   print(hm)
   dev.off()  
+  
+  
+## -----------------------------------------------------------------------------
+## 3) Use Bayes theorem to calculate Pr(pair occ | any owl detected) ####  
+  
+#Extract occupancy parameters from model
+  
+  (psi_pair <- mean(final_model$sims.list$psiD) * mean(final_model$sims.list$RD))
+  (psi_nopair <- mean(final_model$sims.list$psiD) * (1 - mean(final_model$sims.list$RD)))
+  
+#Probability a site is occupied by pair given that you detected an owl there  
+  
+  (p2 * psi_pair) / ((p2 * psi_pair) + (p1 * psi_nopair))
   
   

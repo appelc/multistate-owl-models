@@ -123,8 +123,8 @@ inits<-function(){list(Occ.hex=y2,
 ## -----------------------------------------------------------------------------
 ## save results
 
-  saveRDS(out_real, file = paste(filedir, 'model_output.rds', sep = '/'))
-  write.table(round(out_real$summary, 3), file = paste(filedir, 'model_summary.txt', sep = '/'), 
+  saveRDS(output, file = paste(filedir, 'model_output.rds', sep = '/'))
+  write.table(round(output$summary, 3), file = paste(filedir, 'model_summary.txt', sep = '/'), 
               sep = '\t', col.names = NA, row.names = TRUE)
 
 

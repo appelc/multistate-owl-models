@@ -11,8 +11,8 @@
 	    beta2[aa]<-a[aa-1,pick[aa-1]]
        		pick[aa-1]<-w[aa-1]+1
        		w[aa-1]~dbern(0.5)
-       		a[aa-1,1]~dnorm(SpikeMu[aa],tau.a[aa])
-       		tau.a[aa]<-pow(SpikeSD[aa],-2)
+       		a[aa-1,1]~dnorm(SpikeMuBeta2[aa],tau.a[aa])
+       		tau.a[aa]<-pow(SpikeSDBeta2[aa],-2)
        		a[aa-1,2]~dnorm(0,0.368)      
           }
 
@@ -38,7 +38,7 @@
           	logit(psi[ii])<-beta
 
 	    #logistic regression of paired status probability, given occupancy of hexagon
-	        logit(R[ii])<-beta2[1] + beta2[2]*suit500_mean[ii] + beta2[3]*area[ii] + beta2[4]*stva_total[ii]
+	        logit(R[ii])<-beta2[1] + beta2[2]*nr500[ii] + beta2[3]*area[ii] + beta2[4]*bo_total[ii]
   
           for(kk in 1:nVisits){ #loop through visits at recorders
               y[ii,kk]~dcat(p[ii,kk,Occ.hex[ii], ]) #encounter data

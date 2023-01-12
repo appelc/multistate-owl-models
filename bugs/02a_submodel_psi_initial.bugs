@@ -28,7 +28,7 @@
           TPM[ii,3]<-1-psi[ii]         #unoccupied 
   
 	    #logistic regression of occupancy probability of hexagon
-          	logit(psi[ii])<-beta[1] + beta[2]*nr500[ii,mm+1] + beta[3]*area[ii] + beta[4]*bo_total[ii]
+          	logit(psi[ii])<-beta[1] + beta[2]*nr500[ii] + beta[3]*area[ii] + beta[4]*bo_total[ii]
 
 	    #logistic regression of paired status probability, given occupancy of hexagon
 	        logit(R[ii])<-beta2  

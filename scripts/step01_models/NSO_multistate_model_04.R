@@ -99,7 +99,7 @@ params <-c('beta','beta2','gamma','iota',
 
   start <- Sys.time()
   output <- jagsUI(data = jdata, inits = inits, parameters = params, store.data = TRUE,
-                   model = 'bugs/model_01a.bugs',
+                   model = 'bugs/04_model.bugs',
                    n.chains=10, n.thin=1, n.iter=100000, n.burnin=50000, n.adapt=50000, parallel=TRUE)
   (end = Sys.time() - start)
 

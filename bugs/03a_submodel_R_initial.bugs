@@ -30,7 +30,7 @@
           	logit(psi[ii])<-beta
 
 	    #logistic regression of paired status probability, given occupancy of hexagon
-	        logit(R[ii])<-beta2[1] + beta2[2]*suit_wtmean[ii,mm+1] + beta2[3]*area[ii] + beta2[4]*stva_total[ii]
+	        logit(R[ii])<-beta2[1] + beta2[2]*nr500[ii] + beta2[3]*area[ii] + beta2[4]*bo_total[ii]
   
           for(kk in 1:nVisits){ #loop through visits at recorders
               y[ii,kk]~dcat(p[ii,kk,Occ.hex[ii], ]) #encounter data

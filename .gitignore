@@ -2,3 +2,11 @@
 .Rhistory
 .RData
 .Ruserdata
+.RDataTmp
+.Rdata
+.httr-oauth
+.DS_Store
+.RDS
+results/
+bugs_old/
+scripts_old/

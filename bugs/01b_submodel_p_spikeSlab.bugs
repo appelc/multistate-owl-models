@@ -47,10 +47,10 @@
             #w indicator var:
 
             #logistic regression of detection probability of species without paired birds:
-               logit(pA[ii,kk])<-gamma[1]                 + w[2]*gamma[3]*noise[ii,kk] + w[3]*gamma[4]*effort[ii,kk] + w[4]*gamma[5]*seasondate[ii,kk] + w[5]*gamma[6]*stva_weekly[ii,kk] + w[6]*gamma[7]*suit_stn[ii,kk]    #with 5 covariates
+               logit(pA[ii,kk])<-gamma[1]                 + w[2]*gamma[3]*noise[ii,kk] + w[3]*gamma[4]*effort[ii,kk] + w[4]*gamma[5]*season[ii,kk] + w[5]*gamma[6]*bo_weekly[ii,kk] + w[6]*gamma[7]*nr200[ii,kk]    #with 5 covariates
               
             #logistic regression of detection probability of species with paired birds:
-               logit(pJ[ii,kk])<-gamma[1] + w[1]*gamma[2] + w[2]*gamma[3]*noise[ii,kk] + w[3]*gamma[4]*effort[ii,kk] + w[4]*gamma[5]*seasondate[ii,kk] + w[5]*gamma[6]*stva_weekly[ii,kk] + w[6]*gamma[7]*suit_stn[ii,kk]    #with 5 covariates
+               logit(pJ[ii,kk])<-gamma[1] + w[1]*gamma[2] + w[2]*gamma[3]*noise[ii,kk] + w[3]*gamma[4]*effort[ii,kk] + w[4]*gamma[5]*season[ii,kk] + w[5]*gamma[6]*bo_weekly[ii,kk] + w[6]*gamma[7]*nr200[ii,kk]    #with 5 covariates
               
             #logistic regression of probability of correctly detecting paired status:  
                logit(delta[ii,kk])<-iota           

@@ -67,7 +67,7 @@ ls()
 
 jdata <- list(nhex = as.numeric(nrow(det_matrix)), nVisits = as.numeric(ncol(det_matrix)), 
                 y = det_matrix,
-                bo_total = bo_total_covar, suit_mean = nr500_mean, 
+                bo_total = bo_total_covar, nr500 = nr500_mean, 
                 noise = noise_covar, effort = effort_covar)
   
 str(jdata) #check dimensions (1x207 and 1x40)

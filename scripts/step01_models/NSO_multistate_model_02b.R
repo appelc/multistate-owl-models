@@ -69,8 +69,8 @@ ls()
 ## set up data input ####
 
 #load means/SDs from initial models to use for spike-and-slab priors
-  spike_mu_beta <- readRDS('results/02a_submodel_psi_initial/spike_gamma_mu.RDS')
-  spike_SD_beta <- readRDS('results/02a_submodel_psi_initial/spike_gamma_SD.RDS')
+  (spike_mu_beta <- readRDS('results/02a_submodel_psi_initial/spike_gamma_mu.RDS'))
+  (spike_SD_beta <- readRDS('results/02a_submodel_psi_initial/spike_gamma_SD.RDS'))
   
 jdata <- list(nhex = as.numeric(nrow(det_matrix)), nVisits = as.numeric(ncol(det_matrix)), 
               y = det_matrix,
@@ -122,8 +122,8 @@ inits<-function(){list(Occ.hex=y2,
 ## -----------------------------------------------------------------------------
 ## save results
 
-  saveRDS(out_real, file = paste(filedir, 'model_output.rds', sep = '/'))
-  write.table(round(out_real$summary, 3), file = paste(filedir, 'model_summary.txt', sep = '/'), 
+  saveRDS(output, file = paste(filedir, 'model_output.rds', sep = '/'))
+  write.table(round(output$summary, 3), file = paste(filedir, 'model_summary.txt', sep = '/'), 
               sep = '\t', col.names = NA, row.names = TRUE)
 
 

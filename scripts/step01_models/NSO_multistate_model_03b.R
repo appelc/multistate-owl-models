@@ -65,12 +65,20 @@ ls()
   effort_covar <- unname(as.matrix(effort[,-c(1:2)]))
   
 
+##------------------------------------------------------------------------------
+## re-save the spike/slab from model 03a (I messed it up)
+
+tmp <- readRDS('results/03a_submodel_R_initial/model_output.rds')
+
+saveRDS(tmp$mean$beta2, file = paste('results/03a_submodel_R_initial', 'spike_beta2_mu.RDS', sep = '/'))
+saveRDS(tmp$sd$beta2, file = paste('results/03a_submodel_R_initial', 'spike_beta2_SD.RDS', sep = '/'))
+
 ## -----------------------------------------------------------------------------
 ## set up data input ####
 
 #load means/SDs from initial models to use for spike-and-slab priors
-  spike_mu_beta2 <- readRDS('results/03a_submodel_R_initial/spike_beta2_mu.RDS')
-  spike_SD_beta2 <- readRDS('results/03a_submodel_R_initial/spike_beta2_SD.RDS')
+  (spike_mu_beta2 <- readRDS('results/03a_submodel_R_initial/spike_beta2_mu.RDS'))
+  (spike_SD_beta2 <- readRDS('results/03a_submodel_R_initial/spike_beta2_SD.RDS'))
   
 jdata <- list(nhex = as.numeric(nrow(det_matrix)), nVisits = as.numeric(ncol(det_matrix)), 
               y = det_matrix,
@@ -122,8 +130,8 @@ params<-c('beta','beta2','gamma','iota','w')
 ## -----------------------------------------------------------------------------
 ## save results
 
-  saveRDS(out_real, file = paste(filedir, 'model_output.rds', sep = '/'))
-  write.table(round(out_real$summary, 3), file = paste(filedir, 'model_summary.txt', sep = '/'), 
+  saveRDS(output, file = paste(filedir, 'model_output.rds', sep = '/'))
+  write.table(round(output$summary, 3), file = paste(filedir, 'model_summary.txt', sep = '/'), 
               sep = '\t', col.names = NA, row.names = TRUE)
 
 
